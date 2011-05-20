@@ -1,0 +1,42 @@
+
+./bin/slingagui
+---------------
+
+  The game harness that we will use to run your program.  You should use this to test
+  your program, play against it, try the game out for your self, etc.
+
+  Use "./bin/slingagui -h" for usage.
+
+
+./bin/gyslinga
+--------------
+
+  The binary for the reference implementation provided in player.cpp.
+  Contact us for questions about the code.
+
+
+./player.cpp
+--------------
+
+  The reference implementation provided for you.  We recommend you use it as a
+  starting point so you don't spend much time writing the "boring" parts of
+  the code (ie. file parsing, etc).
+
+  Contact us for questions about the code.
+
+
+./compile
+---------
+
+  This is a shell script to compile player.cpp.
+  To compile, do:
+
+     ./compile
+
+./slingagui
+-----------
+
+  Directory containing the slingagui release.  You can find the source code
+  in ./slingagui/slinga/tcl/*.tcl.
+
+  Contact us for questions.
