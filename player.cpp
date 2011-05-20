@@ -1,6 +1,6 @@
 /*
  Copyright © 2010 Intel Corporation.  All rights reserved
- 
+
  The source code, information and material ("Material") contained herein is owned by Intel Corporation or its suppliers or licensors, and title to such Material remains with Intel Corporation or its suppliers or licensors. The Material contains proprietary information of Intel or its suppliers and licensors. The Material is protected by worldwide copyright laws and treaty provisions. No part of the Material may be used, copied, reproduced, modified, published, uploaded, posted, transmitted, distributed or disclosed in any way without Intel's prior express written permission. No license under any patent, copyright or other intellectual property rights in the Material is granted to or conferred upon you, either expressly, by implication, inducement, estoppel or otherwise. Any license under such intellectual property rights must be express and approved by Intel in writing.
  Other names and brands may be claimed as the property of others. Third Party trademarks are the property of their respective owners.
  Unless otherwise agreed by Intel in writing, you may not remove or alter this notice or any other notice embedded in Materials by Intel or Intel’s suppliers or licensors in any way
@@ -37,6 +37,7 @@
 #include <tr1/array>
 #include <bitset>
 #include <unordered_set>
+#include <list>
 
 using namespace std;
 using namespace std::tr1;
@@ -47,6 +48,7 @@ using namespace std::tr1;
 /////////////////
 
 typedef pair<unsigned int, unsigned int> Point;
+typedef unsigned int uint;
 
 /////////////////////////////////////////////
 // global variables  (the fewer, the better)
@@ -54,6 +56,7 @@ typedef pair<unsigned int, unsigned int> Point;
 
 size_t const BOARD_SIZE = 10; // fixed for the 2009 contest to 10
 
+typedef bitset<BOARD_SIZE * BOARD_SIZE> bit_board; // needs to know board-size
 ////////////////////////
 // forward declaration
 ////////////////////////
@@ -121,7 +124,7 @@ private:
 	char c_; // identifies the player ('P' - player, or 'O' - opponent)
 public:
 	explicit Player(char c) :
-		c_(c) {
+	c_(c) {
 	} // avoiding accidental casting
 	Player(Player const & rs) :
 		c_(rs.c_) {
@@ -300,7 +303,7 @@ All_Moves moves = { Move(-1, -1, Move::STEP), // SW
 		Move(1, -1, Move::SHOOT), // SE
 		Move(1, 0, Move::SHOOT), // E
 		Move(1, 1, Move::SHOOT) // NE
-		};
+};
 //////////////////////////
 // defines the step moves 
 //////////////////////////
@@ -316,7 +319,7 @@ All_Step_Moves step_moves = { Move(-1, -1, Move::STEP), // SW
 		Move(1, 0, Move::STEP), // E
 		Move(1, 1, Move::STEP), // NE
 		/////////////
-		};
+};
 //////////////////////////
 // defines the sling moves 
 //////////////////////////
@@ -332,7 +335,7 @@ All_Sling_Moves sling_moves = { Move(-1, -1, Move::SLING), // SW
 		Move(1, 0, Move::SLING), // E
 		Move(1, 1, Move::SLING), // NE
 		/////////////
-		};
+};
 //////////////////////////////////////////
 // Attack class, containing attacer's location (point), Move
 //////////////////////////////////////////
@@ -363,12 +366,12 @@ private:
 	//	Depth depth_; // depth in exploration of a step, must be even number to be meaningul
 	array<Point, 10> opponent_stones;
 	array<Point, 10> player_stones;
-	bitset<BOARD_SIZE * BOARD_SIZE> threat_map; //create an all-zero bitset
+	bit_board threat_map; //create an all-zero bitset
 	unordered_set<Point> must_move;
-	bitset<BOARD_SIZE * BOARD_SIZE> blue_formation;
-	bitset<BOARD_SIZE * BOARD_SIZE> red_formation;
-	enum RED_OR_BLUE {
-		RED = 0, BLUE = 1
+	array<bit_board, 2> formation;//blue_formation;
+	array<int, 20> places;
+	enum COLOR {
+		BLUE = 0, RED = 1
 	};
 
 public:
@@ -381,8 +384,30 @@ public:
 
 	// construct Slinga from input stream
 	Slinga(istream & in) :
-		size_(BOARD_SIZE), blue_formation(0xaa955), red_formation(0xaa955) {
-		red_formation <<= 80;
+		size_(BOARD_SIZE) {
+		formation[BLUE] = bit_board(0xaa955);
+		formation[RED] = bit_board(0xaa955);
+		formation[RED] <<= 80;
+		places[0] = 0;
+		places[1] = 11;
+		places[2] = 2;
+		places[3] = 13;
+		places[4] = 4;
+		places[5] = 15;
+		places[6] = 6;
+		places[7] = 17;
+		places[8] = 8;
+		places[9] = 19;
+		places[10] = 80;
+		places[11] = 91;
+		places[12] = 82;
+		places[13] = 93;
+		places[14] = 84;
+		places[15] = 95;
+		places[16] = 86;
+		places[17] = 97;
+		places[18] = 88;
+		places[19] = 99;
 		stone_count_[0] = 0;
 		stone_count_[1] = 0;
 		off_board_square_.set_to_off_board();
@@ -438,7 +463,7 @@ public:
 					++stone_count_[player.index()];
 				} else if (temp_player == opponent) {
 					opponent_stones[++stone_count_[opponent.index()]]
-							= make_pair(x, y);
+					                = make_pair(x, y);
 					++stone_count_[opponent.index()];
 				}
 				board_[x][y].set_to(temp_player);
@@ -449,8 +474,8 @@ public:
 	Slinga(Slinga const & rs) :
 		board_(rs.board_), off_board_square_(rs.off_board_square_), size_(
 				rs.size_), stone_count_(rs.stone_count_), remaining_time_(
-				rs.remaining_time_), used_time_(rs.used_time_), moves_made_(
-				rs.moves_made_)/*, depth_(rs.depth_ + 1) */// !!! depth is incremented with every copy
+						rs.remaining_time_), used_time_(rs.used_time_), moves_made_(
+								rs.moves_made_)/*, depth_(rs.depth_ + 1) */// !!! depth is incremented with every copy
 	{
 	}
 
@@ -754,41 +779,177 @@ public:
 	friend ostream & operator <<(ostream & o, Slinga const & b);
 
 	Move defense(Player const & p, Player const & o) {
-		Attack attack = find_attacks(p, o); //true -> stop when attack found
+		Attack attack = find_attacks(p, o);
 		if (attack.attacker.first >= 0) //an attack is possible - do it.
 			return attack.move;
 		// if no attack is possible:
 		Point stone;
 		Move move;
 		threat_map.reset();
-		map_threats(p, o, threat_map);
+		map_threats(p, o, threat_map); // map all the threats
 		for (unordered_set<Point>::const_iterator it = must_move.begin(); it
-				!= must_move.end(); it++) {
+		!= must_move.end(); it++) {
 			if (can_move_to_safety(*it, move))
 				return move;
 		}
 
+		// if we're here, it means we should work on our formation
+		// first, find out if we're closer to the red or blue desired formation
+		unsigned int blues = 0, reds = 0;
+		for (int i = 0; i < stone_count_[p.index()]; i++) {
+			Point stone = player_stones[i];
+			unsigned int xy = stone.second * BOARD_SIZE + stone.first;
+			reds += formation[RED][xy];
+			blues += formation[BLUE][xy];
+		}
+		COLOR color = (blues >= reds) ? BLUE : RED;
+		bit_board form(formation[color]);
+		// now randomly move a stone not on the formation to an empty place
+		// leftmost is prefered.
+		list<Point> free_stones = find_free_stones(p, color);
+		//list<Point> empties;
+		Point leftmost;
+		bool leftmost_found = false;
+		Point stone_to_move;
+		Point empty;
+		for (uint i = BOARD_SIZE * color; i < BOARD_SIZE * color + BOARD_SIZE; i++) {
+			empty = make_pair(places[i] % BOARD_SIZE,
+					(places[i] % BOARD_SIZE) * BOARD_SIZE);
+
+			if (board_[empty.first][empty.second] == p)
+				continue; // it's already manned by one of our stones.
+
+			if (!leftmost_found)
+				leftmost = empty;
+			//empties.push_back(empty);
+			if (check_adjacent(empty, free_stones, stone_to_move, p, color)) {
+				move = make_move(stone_to_move, empty, o);
+				return move;
+			}
+		}
+		// no adjacent free stones, choose the one closest to the leftmost empty square and
+		// move it (might be eaten)
+		return make_move(empty, find_closest_point(empty, free_stones), o);
+	}
+
+	Move make_move (Point const & dest, Point const origin, Player const & o) {
+		uint tx = dest.first, ty = dest.second, ox = origin.first, oy = origin.second,
+				dx,dy;
+		if (tx < ox) dx = -1;
+		else if (tx > ox) dx = 1;
+		else dx = 0;
+
+		if (ty < oy) dy = -1;
+		else if (ty > oy) dy = 1;
+		else dy = 0;
+		Square const & c = board_[ox+dx][oy+dy];
+		if (c == o || c.is_empty()) {
+			return Move(ox, oy, dx, dy, Move::STEP);
+		} else {
+			Square const & c = board_[ox][oy+dy];
+			if (c == o || c.is_empty()) {
+				return Move(ox, oy, 0, dy, Move::STEP);
+			} else {
+				Square const & c = board_[ox+dx][oy];
+				if (c == o || c.is_empty()) {
+					return Move(ox, oy, dx, 0, Move::STEP);
+				}
+			}
+		}
+	}
+
+	Point find_closest_point(Point & empty, list<Point> & free_stones) {
+		int x = empty.first, y = empty.second;
+		int distance = 99, tmp;
+		Point closest;
+		for (list<Point>::const_iterator it = free_stones.begin();
+				it != free_stones.end(); it++) {
+			tmp = max(abs(x - (int)it->first), abs(y - (int)it->second));
+			if (tmp < distance) {
+				closest = *it;
+				distance = tmp;
+			}
+		}
+		return closest;
+	}
+
+	bool check_adjacent(Point & empty, list<Point> & free_stones,
+			Point & stone_to_move, Player const & p, COLOR color) {
+		uint x = empty.first, y = empty.second;
+		if ((y-1) >= 0 && board_[x][y-1] == p) {
+			stone_to_move = Point(x, y-1);
+			return true;
+		}
+		else if ((y + 1) < BOARD_SIZE && board_[x][y+1] == p) {
+			stone_to_move = Point(x, y+1);
+			return true;
+		}
+		else if ((x + 1) < BOARD_SIZE && board_[x+1][y] == p) {
+			stone_to_move = Point(x+1, y);
+			return true;
+		}
+		else if ((x - 1) >= 0 && board_[x-1][y] == p) {
+			stone_to_move = Point(x-1,y);
+			return true;
+		}
+
+		switch (color) {
+			case BLUE:
+				if (y == 0)
+					return false;
+				else {
+					if ((y + 1) < BOARD_SIZE && (x-1) >= 0 && board_[x-1][y+1] == p) {
+						stone_to_move = Point(x-1, y+1);
+						return true;
+					} else if ((y + 1) < BOARD_SIZE && (x+1) < BOARD_SIZE &&
+							board_[x+1][y+1] == p) {
+						stone_to_move = Point(x+1, y+1);
+						return true;
+					}
+					return false;
+				}
+				break;
+			default: //RED
+				if (y == 9)
+					return false;
+				else {
+					if ((y - 1) >= 0 && (x-1) >= 0 && board_[x-1][y-1] == p) {
+						stone_to_move = Point(x-1, y-1);
+						return true;
+					} else if ((y - 1) >= 0 && (x+1) < BOARD_SIZE &&
+							board_[x+1][y-1] == p) {
+						stone_to_move = Point(x+1, y-1);
+						return true;
+					}
+					return false;
+				}
+				break;
+		}
+
+
+
+	}
+
+	list<Point> find_free_stones(Player const & p, COLOR color) {
+		Point stone;
+		list<Point> ret;
 		for (size_t i = 0; i < stone_count_[p.index()]; i++) {
 			stone = player_stones[i];
-			if (threat_map[stone.first + BOARD_SIZE * stone.second]) {
-				// this stone is under threat and can't attack back
-			}
-
+			if (formation[color][BOARD_SIZE * stone.second + stone.first])
+				continue;
+			ret.push_back(stone);
 		}
-		// our stone at Point threatened. is threatened by a sling or a shoot attack
-		// that cannot be attacked by us
-
-
+		return ret;
 	}
 
 	bool can_move_to_safety(Point stone, Move & move) {
 		unsigned int x = stone.first, y = stone.second;
 		unsigned int xx;
 		for (size_t i = -1, xx = x + i; xx < BOARD_SIZE && xx >= 0 && i < 2; i++, xx
-				= x + i) {
+		= x + i) {
 			unsigned int yy;
 			for (size_t j = -1, yy = y + j; j < 2 && yy < BOARD_SIZE && yy >= 0; j++, yy
-					= y + j) {
+			= y + j) {
 				if (!threat_map[BOARD_SIZE * yy + xx]) {
 					move = Move(x, y, xx, yy, Move::STEP);
 					return true;
@@ -808,8 +969,8 @@ public:
 		}
 	}
 
-	void set_slings_shoots(Point stone, bitset<BOARD_SIZE * BOARD_SIZE> & map,
-			Player const & p, Player const & o) {
+	void set_slings_shoots(Point stone, bit_board & map, Player const & p,
+			Player const & o) {
 		unsigned int x = stone.first, y = stone.second;
 		for (size_t i = -1; i < 2; i++) {
 			unsigned int xx = x + i;
@@ -825,7 +986,7 @@ public:
 						bool stones_under_threat = false;
 						Point first_under_threat;
 						for (tx = x - i, ty = y - j; tx < BOARD_SIZE && tx >= 0
-								&& ty < BOARD_SIZE && ty >= 0; tx - i, ty - j) {
+						&& ty < BOARD_SIZE && ty >= 0; tx - i, ty - j) {
 							if (board_[tx][ty] == p) {
 								if (stones_under_threat) {
 									must_move.insert(first_under_threat);
@@ -844,7 +1005,7 @@ public:
 		}
 	}
 
-	void set_surround(Point stone, bitset<BOARD_SIZE * BOARD_SIZE> & map) {
+	void set_surround(Point stone, bit_board & map) {
 		unsigned int x = stone.first;
 		unsigned int y = stone.second;
 		for (size_t i = -1; i < 2; i++) {
@@ -863,20 +1024,21 @@ public:
 
 int main(int argc, char * argv[]) {
 	/*bitset<100> blue_formation(0xaa955), red_formation(0xAA955);
-	red_formation <<= 80;
-	for (int y = 9; y >= 0; --y) {
-		for (int x = 0; x < 10; x++) {
-			cout << blue_formation[10 * y + x];
-		}
-		cout << endl;
-	}
-	cout << endl << endl;
-	for (int y = 9; y >= 0; --y) {
-		for (int x = 0; x < 10; x++) {
-			cout << red_formation[10 * y + x];
-		}
-		cout << endl;
-	}*/
+	 red_formation <<= 80;
+
+	 for (int y = 9; y >= 0; --y) {
+	 for (int x = 0; x < 10; x++) {
+	 cout << blue_formation[10 * y + x];
+	 }
+	 cout << endl;
+	 }
+	 cout << endl << endl;
+	 for (int y = 9; y >= 0; --y) {
+	 for (int x = 0; x < 10; x++) {
+	 cout << red_formation[10 * y + x];
+	 }
+	 cout << endl;
+	 }*/
 	/*list<int> l;
 	 for (list<int>::iterator it = l.begin(); it != l.end(); it++) {
 	 cout << "empty: " << *it << endl;
