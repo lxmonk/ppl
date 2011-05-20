@@ -323,7 +323,7 @@ public:
 
 	// construct Slinga from input stream
 	Slinga(istream & in) :
-		size_(BOARD_SIZE), depth_(0) {
+		size_(BOARD_SIZE)/*, depth_(0)*/ {
 		stone_count_[0] = 0;
 		stone_count_[1] = 0;
 		off_board_square_.set_to_off_board();
@@ -390,7 +390,7 @@ public:
 		board_(rs.board_), off_board_square_(rs.off_board_square_), size_(
 				rs.size_), stone_count_(rs.stone_count_), remaining_time_(
 				rs.remaining_time_), used_time_(rs.used_time_), moves_made_(
-				rs.moves_made_), depth_(rs.depth_ + 1) // !!! depth is incremented with every copy
+				rs.moves_made_)/*, depth_(rs.depth_ + 1) */ // !!! depth is incremented with every copy
 	{
 	}
 
@@ -490,7 +490,7 @@ private:
 		// Note 3: (5, 2) < (4, 1) - we do favor stone swap (both x and y lose a stone)
 		// Note 4: (5, 2) > (4, 2) - if x loses a stone and y stays the same, it's a lower score
 
-		return Score((2 * x + 3 * (size_ - y)), depth_);
+		return 0;//Score((2 * x + 3 * (size_ - y)), depth_);
 	}
 
 public:
@@ -535,7 +535,7 @@ public:
 	}
 
 	// makes the next best step for p and returns its score
-	pair<Score, Move> make_best_move(Depth max_depth, Player const & p,
+	Move make_best_move(/*Depth max_depth, */Player const & p,
 			Player const & o) {
 		//    if(depth_ >= max_depth || stone_count_[p.index()] == 0){
 		//      // we reached the max depth or we have no stones of type p at all
@@ -544,7 +544,7 @@ public:
 
 		if (remaining_time_[o.index()] == 0) {
 			return attack(p,o);
-		}
+		}/*
 		Score best_score_so_far_after_player_move = MIN_SCORE;
 		Move best_move_so_far(0, 0);
 		pair<size_t, size_t> candidate_stone(0, 0);
@@ -622,8 +622,8 @@ public:
 						// if it is equal, then we assign current depth to best_score_so_far_after_player_move
 						// because it means that you can achieve the best score at the current depth, you don't need to go deeper
 						// which should be favored over other equal scores with deeper depth
-						if (depth_ > 0
-								&& current_score.get_score_value()
+						if (
+								current_score.get_score_value()
 										== best_score_so_far_after_player_move.get_score_value()) {
 							best_score_so_far_after_player_move.set_depth(
 									depth_); // used for favoring shallower good steps over deeper ones
@@ -636,10 +636,16 @@ public:
 		execute_move(candidate_stone.first, candidate_stone.second,
 				best_move_so_far, p, o);
 		return make_pair(best_score_so_far_after_player_move, best_move_so_far);
+	*/
 	}
 
 	friend ostream & operator <<(ostream & o, Slinga const & b);
+
+	Move attack(Player const & p, Player const & o){
+
+	}
 };
+
 
 int main(int argc, char * argv[]) {
 	srand(time(NULL)); // set the seed based on time
@@ -670,9 +676,9 @@ int main(int argc, char * argv[]) {
 	// if I have all 10 stones, do a depth 2 exploration, otherwise do depth 4
 	int depth = slinga.get_stone_count(pp) == 10 ? 2 : 4;
 
-	pair<Score, Move> smp = slinga.make_best_move(depth, pp, oo); // this is where the action takes place
+	Move move = slinga.make_best_move(/*depth, */pp, oo); // this is where the action takes place
 
-	smp.second.print_move_taken(outfile); // writing the file with the move taken
+	/*smp.second*/move.print_move_taken(outfile); // writing the file with the move taken
 	outfile.close();
 
 	return 0;
