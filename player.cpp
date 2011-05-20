@@ -296,7 +296,38 @@ All_Moves moves = { Move(-1, -1, Move::STEP), // SW
 		Move(1, 0, Move::SHOOT), // E
 		Move(1, 1, Move::SHOOT) // NE
 		};
+//////////////////////////
+// defines the step moves 
+//////////////////////////
+typedef array<Move, 8> All_Step_Moves;
+All_Step_Moves step_moves = { Move(-1, -1, Move::STEP), // SW
+		Move(-1, 0, Move::STEP), // W
+		Move(-1, 1, Move::STEP), // NW
 
+		Move(0, -1, Move::STEP), // S
+		Move(0, 1, Move::STEP), // N
+
+		Move(1, -1, Move::STEP), // SE
+		Move(1, 0, Move::STEP), // E
+		Move(1, 1, Move::STEP), // NE
+		/////////////
+		};
+//////////////////////////
+// defines the sling moves 
+//////////////////////////
+typedef array<Move, 8> All_Sling_Moves;
+All_Sling_Moves sling_moves = { Move(-1, -1, Move::SLING), // SW
+		Move(-1, 0, Move::SLING), // W
+		Move(-1, 1, Move::SLING), // NW
+
+		Move(0, -1, Move::SLING), // S
+		Move(0, 1, Move::SLING), // N
+
+		Move(1, -1, Move::SLING), // SE
+		Move(1, 0, Move::SLING), // E
+		Move(1, 1, Move::SLING), // NE
+		/////////////
+		};
 //////////////////////////////////////////
 // main class of game Slinga
 //////////////////////////////////////////
@@ -309,9 +340,9 @@ private:
 	array<double, 2> remaining_time_; // remaining time for each of the players
 	array<double, 2> used_time_; // used time so far for the 2 players
 	array<size_t, 2> moves_made_; // moves made so far for the 2 players
-//	Depth depth_; // depth in exploration of a step, must be even number to be meaningul
-	array<pair<int, int>, 10> opponent_stones;
-	array<pair<int, int>, 10> player_stones;
+	//	Depth depth_; // depth in exploration of a step, must be even number to be meaningul
+	array<pair<int, int> , 10> opponent_stones;
+	array<pair<int, int> , 10> player_stones;
 
 public:
 
@@ -323,7 +354,7 @@ public:
 
 	// construct Slinga from input stream
 	Slinga(istream & in) :
-		size_(BOARD_SIZE)/*, depth_(0)*/ {
+		size_(BOARD_SIZE)/*, depth_(0)*/{
 		stone_count_[0] = 0;
 		stone_count_[1] = 0;
 		off_board_square_.set_to_off_board();
@@ -374,11 +405,12 @@ public:
 				in >> tc;
 				Player temp_player(tc);
 				if (temp_player == player) {
-					player_stones[stone_count_[player.index()]] = make_pair(x,y);
+					player_stones[stone_count_[player.index()]] = make_pair(x,
+							y);
 					++stone_count_[player.index()];
-				}
-				else if (temp_player == opponent) {
-					opponent_stones[++stone_count_[opponent.index()]] = make_pair(x,y);
+				} else if (temp_player == opponent) {
+					opponent_stones[++stone_count_[opponent.index()]]
+							= make_pair(x, y);
 					++stone_count_[opponent.index()];
 				}
 				board_[x][y].set_to(temp_player);
@@ -390,7 +422,7 @@ public:
 		board_(rs.board_), off_board_square_(rs.off_board_square_), size_(
 				rs.size_), stone_count_(rs.stone_count_), remaining_time_(
 				rs.remaining_time_), used_time_(rs.used_time_), moves_made_(
-				rs.moves_made_)/*, depth_(rs.depth_ + 1) */ // !!! depth is incremented with every copy
+				rs.moves_made_)/*, depth_(rs.depth_ + 1) */// !!! depth is incremented with every copy
 	{
 	}
 
@@ -446,6 +478,25 @@ public:
 		return false; // just to get rid of compiler warning
 	}
 
+	bool opponetInMove(int x, int y, Move const & st, Player const & p,
+			Player const & o) const {
+		if (get_square(x, y) != p)
+			return false; // the square I want to make the move from does not host player p
+
+		if (st.move_kind == Move::STEP) {
+			Square const & c = get_square(x + st.xd, y + st.yd);
+			// we can only attack neighbor in given direction if it is occupied by opponent's stone
+			return (c == o);
+		} else if (st.move_kind == Move::SLING) {
+			if (get_square(x - st.xd, y - st.yd) != p)
+				return false; // we need a sling consisting of 2 ps
+			if (!get_square(x + st.xd, y + st.yd).is_empty())
+				return false; // adjacent neighbor is not empty
+			Square const & c = get_square(x + 2 * st.xd, y + 2 * st.yd); // get second order neighbor
+			return (c == o); // only sling to square that has opponent
+		}
+		return false; // just to get rid of compiler warning
+	}
 private:
 	Score compute_score_(int x, int y) const {
 		//
@@ -534,121 +585,151 @@ public:
 		}
 	}
 
+	Move opponentInArea(int x, int y, Player const & p, Player const & o) {
+		Move move(-99, -99, Move::STEP);
+		for (All_Step_Moves::iterator m1 = moves.begin(); m1 != moves.end(); ++m1) {
+			if (opponetInMove(x, y, *m1, p, o))
+				return *m1;
+		}
+		for (All_Sling_Moves::iterator m1 = moves.begin(); m1 != moves.end(); ++m1) {
+			if (opponetInMove(x, y, *m1, p, o))
+				return *m1;
+		}
+		return move;
+		//move(-99,-99,Move::Step);
+
+	}
+
+		Attack find_attacks(Player const & p,Player const & o) {
+				
+			}
+		}
+	//	
+	//	Move attack(Player const & p,Player const & o) {
+	//		//array<pair<int, int>, 10> player_stones;
+	//		array<pair<int, 10> opponent_stones_cluster;
+	//		int current_cluster = 0;
+	//		int current_point = 0;
+	//		int checked_points = 0;
+	//		
+	//		while (checked_points < 9) {
+	//			
+	//		}
+
+
 	// makes the next best step for p and returns its score
-	Move make_best_move(/*Depth max_depth, */Player const & p,
-			Player const & o) {
+	Move make_best_move(/*Depth max_depth, */Player const & p, Player const & o) {
 		//    if(depth_ >= max_depth || stone_count_[p.index()] == 0){
 		//      // we reached the max depth or we have no stones of type p at all
 		//      return make_pair(evaluate_board(p, o), Move(0, 0, 0, 0));
 		//    }
 
-		if (remaining_time_[o.index()] == 0) {
-			return attack(p,o);
-		}/*
-		Score best_score_so_far_after_player_move = MIN_SCORE;
-		Move best_move_so_far(0, 0);
-		pair<size_t, size_t> candidate_stone(0, 0);
-		Score current_score = evaluate_board(p, o);
+		//		if (remaining_time_[o.index()] == 0) {
+		//			return fullHeadOnattack(p,o);
+		//		}
+		/*		Score best_score_so_far_after_player_move = MIN_SCORE;
+		 Move best_move_so_far(0, 0);
+		 pair<size_t, size_t> candidate_stone(0, 0);
+		 Score current_score = evaluate_board(p, o);
 
-		/////////////// evaluate a move for p at depth+1
-		for (int x = 0; x < size_; ++x) {
-			for (int y = 0; y < size_; ++y) {
-				Square const & c = get_square(x, y);
-				if (c != p)
-					continue;
+		 /////////////// evaluate a move for p at depth+1
+		 for (int x = 0; x < size_; ++x) {
+		 for (int y = 0; y < size_; ++y) {
+		 Square const & c = get_square(x, y);
+		 if (c != p)
+		 continue;
 
-				size_t msc = 0;
-				for (All_Moves::iterator m1 = moves.begin(); m1 != moves.end(); ++m1, ++msc) {
-					if (!is_move_legal(x, y, *m1, p, o))
-						continue;
+		 size_t msc = 0;
+		 for (All_Moves::iterator m1 = moves.begin(); m1 != moves.end(); ++m1, ++msc) {
+		 if (!is_move_legal(x, y, *m1, p, o))
+		 continue;
 
-					Slinga copy_of_board(*this); // copy constructor increments depth
+		 Slinga copy_of_board(*this); // copy constructor increments depth
 
-					copy_of_board.execute_move(x, y, *m1, p, o);
+		 copy_of_board.execute_move(x, y, *m1, p, o);
 
-					//Score worst_score_after_opponent_move = copy_of_board.evaluate_board(p, o);
-					Score worst_score_after_opponent_move = MAX_SCORE;
-					bool opponent_can_make_legal_step = false;
+		 //Score worst_score_after_opponent_move = copy_of_board.evaluate_board(p, o);
+		 Score worst_score_after_opponent_move = MAX_SCORE;
+		 bool opponent_can_make_legal_step = false;
 
-					//////////////// evalutate a move for o at depth+2
-					for (int x2 = 0; x2 < size_; ++x2) {
-						for (int y2 = 0; y2 < size_; ++y2) {
-							Square const & c2 =
-									copy_of_board.get_square(x2, y2);
-							if (c2 != o)
-								continue;
-							for (All_Moves::iterator m2 = moves.begin(); m2
-									!= moves.end(); ++m2) {
-								if (!copy_of_board.is_move_legal(x2, y2, *m2,
-										o, p))
-									continue;
+		 //////////////// evalutate a move for o at depth+2
+		 for (int x2 = 0; x2 < size_; ++x2) {
+		 for (int y2 = 0; y2 < size_; ++y2) {
+		 Square const & c2 =
+		 copy_of_board.get_square(x2, y2);
+		 if (c2 != o)
+		 continue;
+		 for (All_Moves::iterator m2 = moves.begin(); m2
+		 != moves.end(); ++m2) {
+		 if (!copy_of_board.is_move_legal(x2, y2, *m2,
+		 o, p))
+		 continue;
 
-								opponent_can_make_legal_step = true;
+		 opponent_can_make_legal_step = true;
 
-								Slinga copy_of_board2(copy_of_board); // copy constructor increments depth
+		 Slinga copy_of_board2(copy_of_board); // copy constructor increments depth
 
-								copy_of_board2.execute_move(x2, y2, *m2, o, p);
+		 copy_of_board2.execute_move(x2, y2, *m2, o, p);
 
-								Score temp_score =
-										copy_of_board2.make_best_move(
-												max_depth, p, o).first;
-								if (temp_score
-										< worst_score_after_opponent_move) {
-									worst_score_after_opponent_move
-											= temp_score;
-								}
-							}
-						}
-					}
+		 Score temp_score =
+		 copy_of_board2.make_best_move(
+		 max_depth, p, o).first;
+		 if (temp_score
+		 < worst_score_after_opponent_move) {
+		 worst_score_after_opponent_move
+		 = temp_score;
+		 }
+		 }
+		 }
+		 }
 
-					if (!opponent_can_make_legal_step) {
-						worst_score_after_opponent_move
-								= copy_of_board.evaluate_board(p, o);
-					}
+		 if (!opponent_can_make_legal_step) {
+		 worst_score_after_opponent_move
+		 = copy_of_board.evaluate_board(p, o);
+		 }
 
-					if (best_score_so_far_after_player_move
-							< worst_score_after_opponent_move) {
-						//(worst_score_after_opponent_move == best_score_so_far_after_player_move && rand() % 3 == 0)){ // randomize to avoid cycles
+		 if (best_score_so_far_after_player_move
+		 < worst_score_after_opponent_move) {
+		 //(worst_score_after_opponent_move == best_score_so_far_after_player_move && rand() % 3 == 0)){ // randomize to avoid cycles
 
 
-						best_score_so_far_after_player_move
-								= worst_score_after_opponent_move;
-						best_move_so_far = *m1;
-						best_move_so_far.set_square(x, y);
-						candidate_stone = make_pair(x, y);
+		 best_score_so_far_after_player_move
+		 = worst_score_after_opponent_move;
+		 best_move_so_far = *m1;
+		 best_move_so_far.set_square(x, y);
+		 candidate_stone = make_pair(x, y);
 
-						// if going down a path guarantees best_score_so_far_after_player_move at the deepest depth
-						// the current board's score (at current depth)  may be better or worse than that
-						// if it is equal, then we assign current depth to best_score_so_far_after_player_move
-						// because it means that you can achieve the best score at the current depth, you don't need to go deeper
-						// which should be favored over other equal scores with deeper depth
-						if (
-								current_score.get_score_value()
-										== best_score_so_far_after_player_move.get_score_value()) {
-							best_score_so_far_after_player_move.set_depth(
-									depth_); // used for favoring shallower good steps over deeper ones
-						}
-					}
-				}
-			}
-		}
+		 // if going down a path guarantees best_score_so_far_after_player_move at the deepest depth
+		 // the current board's score (at current depth)  may be better or worse than that
+		 // if it is equal, then we assign current depth to best_score_so_far_after_player_move
+		 // because it means that you can achieve the best score at the current depth, you don't need to go deeper
+		 // which should be favored over other equal scores with deeper depth
+		 if (
+		 current_score.get_score_value()
+		 == best_score_so_far_after_player_move.get_score_value()) {
+		 best_score_so_far_after_player_move.set_depth(
+		 depth_); // used for favoring shallower good steps over deeper ones
+		 }
+		 }
+		 }
+		 }
+		 }
 
-		execute_move(candidate_stone.first, candidate_stone.second,
-				best_move_so_far, p, o);
-		return make_pair(best_score_so_far_after_player_move, best_move_so_far);
-	*/
+		 execute_move(candidate_stone.first, candidate_stone.second,
+		 best_move_so_far, p, o);
+		 return make_pair(best_score_so_far_after_player_move, best_move_so_far);
+		 */
 	}
 
 	friend ostream & operator <<(ostream & o, Slinga const & b);
 
-	Move attack(Player const & p, Player const & o){
+	Move attack(Player const & p, Player const & o) {
 
 	}
 };
 
-
 int main(int argc, char * argv[]) {
-	srand(time(NULL)); // set the seed based on time
+	srand( time(NULL)); // set the seed based on time
 	ifstream infile(argv[1]);
 	if (!infile) {
 		cout << "could not open file " << argv[1] << " for reading\n";
@@ -678,7 +759,8 @@ int main(int argc, char * argv[]) {
 
 	Move move = slinga.make_best_move(/*depth, */pp, oo); // this is where the action takes place
 
-	/*smp.second*/move.print_move_taken(outfile); // writing the file with the move taken
+	/*smp.second*/
+	move.print_move_taken(outfile); // writing the file with the move taken
 	outfile.close();
 
 	return 0;
