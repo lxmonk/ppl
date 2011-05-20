@@ -44,7 +44,7 @@ using namespace std::tr1;
 // typedefs
 /////////////////
 
-typedef unsigned int Depth;
+typedef pair<unsigned int, unsigned int> point;
 
 /////////////////////////////////////////////
 // global variables  (the fewer, the better)
@@ -544,7 +544,10 @@ public:
 
 		if (remaining_time_[o.index()] == 0) {
 			return attack(p,o);
-		}/*
+		} else {
+			return defense(p,o);
+		}
+		/*
 		Score best_score_so_far_after_player_move = MIN_SCORE;
 		Move best_move_so_far(0, 0);
 		pair<size_t, size_t> candidate_stone(0, 0);
@@ -640,6 +643,11 @@ public:
 	}
 
 	friend ostream & operator <<(ostream & o, Slinga const & b);
+
+	Move defense(Player const & p, Player const & o){
+
+
+	}
 
 	Move attack(Player const & p, Player const & o){
 
