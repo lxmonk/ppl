@@ -297,7 +297,38 @@ All_Moves moves = { Move(-1, -1, Move::STEP), // SW
 		Move(1, 0, Move::SHOOT), // E
 		Move(1, 1, Move::SHOOT) // NE
 		};
+//////////////////////////
+// defines the step moves 
+//////////////////////////
+typedef array<Move, 8> All_Step_Moves;
+All_Step_Moves step_moves = { Move(-1, -1, Move::STEP), // SW
+		Move(-1, 0, Move::STEP), // W
+		Move(-1, 1, Move::STEP), // NW
 
+		Move(0, -1, Move::STEP), // S
+		Move(0, 1, Move::STEP), // N
+
+		Move(1, -1, Move::STEP), // SE
+		Move(1, 0, Move::STEP), // E
+		Move(1, 1, Move::STEP), // NE
+		/////////////
+		};
+//////////////////////////
+// defines the sling moves 
+//////////////////////////
+typedef array<Move, 8> All_Sling_Moves;
+All_Sling_Moves sling_moves = { Move(-1, -1, Move::SLING), // SW
+		Move(-1, 0, Move::SLING), // W
+		Move(-1, 1, Move::SLING), // NW
+
+		Move(0, -1, Move::SLING), // S
+		Move(0, 1, Move::SLING), // N
+
+		Move(1, -1, Move::SLING), // SE
+		Move(1, 0, Move::SLING), // E
+		Move(1, 1, Move::SLING), // NE
+		/////////////
+		};
 //////////////////////////////////////////
 // Attack class, containing attacer's location (point), Move
 //////////////////////////////////////////
@@ -307,7 +338,9 @@ public:
 	Point attacker;
 	Move move;
 
-	Attack() : move(-99,-99, Move::STEP) {}
+	Attack() :
+		move(-99, -99, Move::STEP) {
+	}
 };
 
 //////////////////////////////////////////
@@ -460,6 +493,25 @@ public:
 		return false; // just to get rid of compiler warning
 	}
 
+	bool opponetInMove(int x, int y, Move const & st, Player const & p,
+			Player const & o) const {
+		if (get_square(x, y) != p)
+			return false; // the square I want to make the move from does not host player p
+
+		if (st.move_kind == Move::STEP) {
+			Square const & c = get_square(x + st.xd, y + st.yd);
+			// we can only attack neighbor in given direction if it is occupied by opponent's stone
+			return (c == o);
+		} else if (st.move_kind == Move::SLING) {
+			if (get_square(x - st.xd, y - st.yd) != p)
+				return false; // we need a sling consisting of 2 ps
+			if (!get_square(x + st.xd, y + st.yd).is_empty())
+				return false; // adjacent neighbor is not empty
+			Square const & c = get_square(x + 2 * st.xd, y + 2 * st.yd); // get second order neighbor
+			return (c == o); // only sling to square that has opponent
+		}
+		return false; // just to get rid of compiler warning
+	}
 private:
 	Score compute_score_(int x, int y) const {
 		//
@@ -547,6 +599,37 @@ public:
 			}
 		}
 	}
+
+	Move opponentInArea(int x, int y, Player const & p, Player const & o) {
+		Move move(-99, -99, Move::STEP);
+		for (All_Step_Moves::iterator m1 = moves.begin(); m1 != moves.end(); ++m1) {
+			if (opponetInMove(x, y, *m1, p, o))
+				return *m1;
+		}
+		for (All_Sling_Moves::iterator m1 = moves.begin(); m1 != moves.end(); ++m1) {
+			if (opponetInMove(x, y, *m1, p, o))
+				return *m1;
+		}
+		return move;
+		//move(-99,-99,Move::Step);
+
+	}
+
+		Attack find_attacks(Player const & p, Player const & o) {
+	
+		}
+	//	
+	//	Move attack(Player const & p,Player const & o) {
+	//		//array<pair<int, int>, 10> player_stones;
+	//		array<pair<int, 10> opponent_stones_cluster;
+	//		int current_cluster = 0;
+	//		int current_point = 0;
+	//		int checked_points = 0;
+	//		
+	//		while (checked_points < 9) {
+	//			
+	//		}
+
 
 	// makes the next best step for p and returns its score
 	Move make_best_move(/*Depth max_depth, */Player const & p, Player const & o) {
@@ -659,28 +742,26 @@ public:
 
 	Move defense(Player const & p, Player const & o) {
 		Attack attack = find_attacks(p, o); //true -> stop when attack found
-		if (attack.attacker.first == -1 ) { //not attacks possible
-			bitset<BOARD_SIZE*BOARD_SIZE> threat;
+		if (attack.attacker.first == -1) { //not attacks possible
+			bitset < BOARD_SIZE * BOARD_SIZE > threat;
 
 			Attack threatened;
-			if ((threatened = threatened_by_sling_or_shoot(p,o)) != NULL) {
+			if ((threatened = threatened_by_sling_or_shoot(p, o)) != NULL) {
 				// our stone at Point threatened. is threatened by a sling or a shoot attack
 				// that cannot be attacked by us
 
 			}
 		}
-
-
-
 	}
 
 	Move attack(Player const & p, Player const & o) {
 
 	}
+
 };
 
 int main(int argc, char * argv[]) {
-	srand(time(NULL)); // set the seed based on time
+	srand( time(NULL)); // set the seed based on time
 	ifstream infile(argv[1]);
 	if (!infile) {
 		cout << "could not open file " << argv[1] << " for reading\n";
