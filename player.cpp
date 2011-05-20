@@ -658,7 +658,7 @@ public:
 	friend ostream & operator <<(ostream & o, Slinga const & b);
 
 	Move defense(Player const & p, Player const & o) {
-		Attack attack = find_attacks(p, o, true); //true -> stop when attack found
+		Attack attack = find_attacks(p, o); //true -> stop when attack found
 		if (attack.attacker.first == -1 ) { //not attacks possible
 			bitset<BOARD_SIZE*BOARD_SIZE> threat;
 
