@@ -36,6 +36,7 @@
 #include <sstream>
 #include <tr1/array>
 #include <bitset>
+#include <unordered_set>
 
 using namespace std;
 using namespace std::tr1;
@@ -239,6 +240,9 @@ public:
 		x = xx;
 		y = yy;
 	}
+	Move() : //defaul EMPTY Move
+		move_kind(STEP), x(-99), y(-99), xd(-99), yd(-99) {
+	}
 	Move(int xx, int yy, int xxd, int yyd, MOVE_KIND m = STEP) :
 		move_kind(m), x(xx), y(yy), xd(xxd), yd(yyd) {
 	}
@@ -336,6 +340,7 @@ All_Sling_Moves sling_moves = { Move(-1, -1, Move::SLING), // SW
 class Attack {
 public:
 	Point attacker;
+	Point target;
 	Move move;
 
 	Attack() :
@@ -356,8 +361,15 @@ private:
 	array<double, 2> used_time_; // used time so far for the 2 players
 	array<size_t, 2> moves_made_; // moves made so far for the 2 players
 	//	Depth depth_; // depth in exploration of a step, must be even number to be meaningul
-	array<pair<int, int> , 10> opponent_stones;
-	array<pair<int, int> , 10> player_stones;
+	array<Point, 10> opponent_stones;
+	array<Point, 10> player_stones;
+	bitset<BOARD_SIZE * BOARD_SIZE> threat_map; //create an all-zero bitset
+	unordered_set<Point> must_move;
+	bitset<BOARD_SIZE * BOARD_SIZE> blue_formation;
+	bitset<BOARD_SIZE * BOARD_SIZE> red_formation;
+	enum RED_OR_BLUE {
+		RED = 0, BLUE = 1
+	};
 
 public:
 
@@ -369,7 +381,8 @@ public:
 
 	// construct Slinga from input stream
 	Slinga(istream & in) :
-		size_(BOARD_SIZE)/*, depth_(0)*/{
+		size_(BOARD_SIZE), blue_formation(0xaa955), red_formation(0xaa955) {
+		red_formation <<= 80;
 		stone_count_[0] = 0;
 		stone_count_[1] = 0;
 		off_board_square_.set_to_off_board();
@@ -615,24 +628,24 @@ public:
 
 	}
 
-		Attack find_attacks(Player const & p, Player const & o) {
-	
-		}
-	//	
-	//	Move attack(Player const & p,Player const & o) {
-	//		//array<pair<int, int>, 10> player_stones;
-	//		array<pair<int, 10> opponent_stones_cluster;
-	//		int current_cluster = 0;
-	//		int current_point = 0;
-	//		int checked_points = 0;
-	//		
-	//		while (checked_points < 9) {
-	//			
-	//		}
+	Attack find_attacks(Player const & p, Player const & o) {
 
+	}
+
+	/*Move attack(Player const & p, Player const & o) {
+
+	 array<pair<int, 10> opponent_stones_cluster;
+	 int current_cluster = 0;
+	 int current_point = 0;
+	 int checked_points = 0;
+
+	 while (checked_points < 9) {
+
+	 }
+	 }*/
 
 	// makes the next best step for p and returns its score
-	Move make_best_move(/*Depth max_depth, */Player const & p, Player const & o) {
+	Move make_best_move(Player const & p, Player const & o) {
 		//    if(depth_ >= max_depth || stone_count_[p.index()] == 0){
 		//      // we reached the max depth or we have no stones of type p at all
 		//      return make_pair(evaluate_board(p, o), Move(0, 0, 0, 0));
@@ -742,14 +755,102 @@ public:
 
 	Move defense(Player const & p, Player const & o) {
 		Attack attack = find_attacks(p, o); //true -> stop when attack found
-		if (attack.attacker.first == -1) { //not attacks possible
-			bitset < BOARD_SIZE * BOARD_SIZE > threat;
+		if (attack.attacker.first >= 0) //an attack is possible - do it.
+			return attack.move;
+		// if no attack is possible:
+		Point stone;
+		Move move;
+		threat_map.reset();
+		map_threats(p, o, threat_map);
+		for (unordered_set<Point>::const_iterator it = must_move.begin(); it
+				!= must_move.end(); it++) {
+			if (can_move_to_safety(*it, move))
+				return move;
+		}
 
-			Attack threatened;
-			if ((threatened = threatened_by_sling_or_shoot(p, o)) != NULL) {
-				// our stone at Point threatened. is threatened by a sling or a shoot attack
-				// that cannot be attacked by us
+		for (size_t i = 0; i < stone_count_[p.index()]; i++) {
+			stone = player_stones[i];
+			if (threat_map[stone.first + BOARD_SIZE * stone.second]) {
+				// this stone is under threat and can't attack back
+			}
 
+		}
+		// our stone at Point threatened. is threatened by a sling or a shoot attack
+		// that cannot be attacked by us
+
+
+	}
+
+	bool can_move_to_safety(Point stone, Move & move) {
+		unsigned int x = stone.first, y = stone.second;
+		unsigned int xx;
+		for (size_t i = -1, xx = x + i; xx < BOARD_SIZE && xx >= 0 && i < 2; i++, xx
+				= x + i) {
+			unsigned int yy;
+			for (size_t j = -1, yy = y + j; j < 2 && yy < BOARD_SIZE && yy >= 0; j++, yy
+					= y + j) {
+				if (!threat_map[BOARD_SIZE * yy + xx]) {
+					move = Move(x, y, xx, yy, Move::STEP);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	void map_threats(Player const & p, Player const & o, bitset<BOARD_SIZE
+			* BOARD_SIZE> & threat_map) {
+		Point stone;
+		for (size_t i = 0; i < stone_count_[o.index()]; i++) {
+			stone = opponent_stones[i];
+			set_surround(stone, threat_map);
+			set_slings_shoots(stone, threat_map, p, o);
+		}
+	}
+
+	void set_slings_shoots(Point stone, bitset<BOARD_SIZE * BOARD_SIZE> & map,
+			Player const & p, Player const & o) {
+		unsigned int x = stone.first, y = stone.second;
+		for (size_t i = -1; i < 2; i++) {
+			unsigned int xx = x + i;
+			for (size_t j = -1; j < 2; j++) {
+				unsigned int yy = y + j;
+				if (!(i == j == 0) && xx < BOARD_SIZE && xx >= 0 && yy
+						< BOARD_SIZE && yy >= 0 && board_[xx][yy] == o) {
+					map.set((y + (-2 * j)) * BOARD_SIZE + x + -2 * i); // sling target set
+					unsigned int xxx = xx + i, yyy = yy + j;
+					if (xxx < BOARD_SIZE && xxx >= 0 && yyy < BOARD_SIZE && yyy
+							>= 0 && board_[xxx][yyy] == o) { //3 in a row - shooting is possible
+						unsigned int tx, ty;
+						bool stones_under_threat = false;
+						Point first_under_threat;
+						for (tx = x - i, ty = y - j; tx < BOARD_SIZE && tx >= 0
+								&& ty < BOARD_SIZE && ty >= 0; tx - i, ty - j) {
+							if (board_[tx][ty] == p) {
+								if (stones_under_threat) {
+									must_move.insert(first_under_threat);
+								} else {
+									first_under_threat = Point(tx, ty);
+									stones_under_threat = true;
+								}
+							}
+							map.set(BOARD_SIZE * ty + tx);
+						}
+						if (stones_under_threat)
+							must_move.insert(first_under_threat); // add the last one threatened
+					}
+				}
+			}
+		}
+	}
+
+	void set_surround(Point stone, bitset<BOARD_SIZE * BOARD_SIZE> & map) {
+		unsigned int x = stone.first;
+		unsigned int y = stone.second;
+		for (size_t i = -1; i < 2; i++) {
+			unsigned int yy = BOARD_SIZE * (y + i);
+			for (size_t j = -1; j < 2; j++) {
+				map.set(yy + x + j);
 			}
 		}
 	}
@@ -761,7 +862,37 @@ public:
 };
 
 int main(int argc, char * argv[]) {
-	srand( time(NULL)); // set the seed based on time
+	/*bitset<100> blue_formation(0xaa955), red_formation(0xAA955);
+	red_formation <<= 80;
+	for (int y = 9; y >= 0; --y) {
+		for (int x = 0; x < 10; x++) {
+			cout << blue_formation[10 * y + x];
+		}
+		cout << endl;
+	}
+	cout << endl << endl;
+	for (int y = 9; y >= 0; --y) {
+		for (int x = 0; x < 10; x++) {
+			cout << red_formation[10 * y + x];
+		}
+		cout << endl;
+	}*/
+	/*list<int> l;
+	 for (list<int>::iterator it = l.begin(); it != l.end(); it++) {
+	 cout << "empty: " << *it << endl;
+	 }
+	 l.push_front(7);
+	 for (list<int>::iterator it = l.begin(); it != l.end(); it++) {
+	 cout << "full: " << *it << endl;
+	 }*/
+
+	/*bitset<5> bs(25);
+	 cout << "bs: " << bs << endl;
+	 for (int i = 0; i < 5; i++) {
+	 cout << i << ": " << bs[i] << endl;
+	 }*/
+
+	srand(time(NULL)); // set the seed based on time
 	ifstream infile(argv[1]);
 	if (!infile) {
 		cout << "could not open file " << argv[1] << " for reading\n";
@@ -787,7 +918,7 @@ int main(int argc, char * argv[]) {
 	Player const oo('O'); // opponent
 
 	// if I have all 10 stones, do a depth 2 exploration, otherwise do depth 4
-	int depth = slinga.get_stone_count(pp) == 10 ? 2 : 4;
+	//int depth = slinga.get_stone_count(pp) == 10 ? 2 : 4;
 
 	Move move = slinga.make_best_move(/*depth, */pp, oo); // this is where the action takes place
 
