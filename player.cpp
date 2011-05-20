@@ -307,7 +307,7 @@ public:
 	Point attacker;
 	Move move;
 
-	Attack() : move(-1,-1, Move::STEP) {}
+	Attack() : move(-99,-99, Move::STEP) {}
 };
 
 //////////////////////////////////////////
