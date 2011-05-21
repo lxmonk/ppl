@@ -369,7 +369,7 @@ private:
 	bit_board threat_map; //create an all-zero bitset
 	unordered_set<Point> must_move;
 	array<bit_board, 2> formation;//blue_formation;
-	array<int, 20> places;
+	array<Point, 20> places;
 	enum COLOR {
 		BLUE = 0, RED = 1
 	};
@@ -388,26 +388,26 @@ public:
 		formation[BLUE] = bit_board(0xaa955);
 		formation[RED] = bit_board(0xaa955);
 		formation[RED] <<= 80;
-		places[0] = 0;
-		places[1] = 11;
-		places[2] = 2;
-		places[3] = 13;
-		places[4] = 4;
-		places[5] = 15;
-		places[6] = 6;
-		places[7] = 17;
-		places[8] = 8;
-		places[9] = 19;
-		places[10] = 80;
-		places[11] = 91;
-		places[12] = 82;
-		places[13] = 93;
-		places[14] = 84;
-		places[15] = 95;
-		places[16] = 86;
-		places[17] = 97;
-		places[18] = 88;
-		places[19] = 99;
+		places[0] = make_pair(0, 0);
+		places[1] = make_pair(1, 1);
+		places[2] = make_pair(2, 0);
+		places[3] = make_pair(3, 1);
+		places[4] = make_pair(4, 0);
+		places[5] = make_pair(5, 1);
+		places[6] = make_pair(6, 0);
+		places[7] = make_pair(7, 1);
+		places[8] = make_pair(8, 0);
+		places[9] = make_pair(9, 1);
+		places[10] = make_pair(0, 8);
+		places[11] = make_pair(1, 9);
+		places[12] = make_pair(2, 8);
+		places[13] = make_pair(3, 9);
+		places[14] = make_pair(4, 8);
+		places[15] = make_pair(5, 9);
+		places[16] = make_pair(6, 8);
+		places[17] = make_pair(7, 9);
+		places[18] = make_pair(8, 8);
+		places[19] = make_pair(9, 9);
 		stone_count_[0] = 0;
 		stone_count_[1] = 0;
 		off_board_square_.set_to_off_board();
@@ -803,7 +803,6 @@ public:
 			blues += formation[BLUE][xy];
 		}
 		COLOR color = (blues >= reds) ? BLUE : RED;
-		bit_board form(formation[color]);
 		// now randomly move a stone not on the formation to an empty place
 		// leftmost is prefered.
 		list<Point> free_stones = find_free_stones(p, color);
@@ -813,8 +812,7 @@ public:
 		Point stone_to_move;
 		Point empty;
 		for (uint i = BOARD_SIZE * color; i < BOARD_SIZE * color + BOARD_SIZE; i++) {
-			empty = make_pair(places[i] % BOARD_SIZE,
-					(places[i] % BOARD_SIZE) * BOARD_SIZE);
+			empty = places[i];//make_pair(places[i] % BOARD_SIZE, 	places[i] - (places[i] % BOARD_SIZE));
 
 			if (board_[empty.first][empty.second] == p)
 				continue; // it's already manned by one of our stones.
