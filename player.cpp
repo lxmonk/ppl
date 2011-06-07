@@ -688,7 +688,6 @@ public:
 	}
 
 	Attack find_attacks(Player const & p, Player const & o) {
-		cout << "<find_attacks> ENTRY" << endl;
 		Attack attack = Attack();
 		return attack;
 	}
@@ -713,8 +712,14 @@ public:
 		if ((stone_count_[o.index()] == 1) && (max(abs(ourClosestStone.first - hisClosestStone.first)
 				,abs(ourClosestStone.second - hisClosestStone.second)) == 1)) {
 			reviveIt();
-			cout << "For to win one hundred victories in one hundred battles is not the acme of skill." << endl
-					<< "To subdue the enemy without fighting is the acme of skill. " << endl;
+			cout << endl << endl << endl << endl;
+			cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+			cout << "! For to win one hundred victories in one hundred battles is not the acme of skill.  !" << endl
+				 << "! To subdue the enemy without fighting is the acme of skill.                         !" << endl
+				 << "!                                                                                    !" <<endl <<
+					"!                                                 The Art of War, Sun Tzu (500 B.C.) !" << endl;
+			cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
+			cout << endl << endl << endl << endl;
 		}
 //		sleep(3);
 		return make_move(hisClosestStone,ourClosestStone,o);
@@ -762,7 +767,6 @@ public:
 		while (!inp.eof()) {
 			inp >> cmdline;
 		}
-		cout << "cmdline: " << cmdline << endl;
 		list<string> args;
 		std::stringstream sss(cmdline);
 		std::string item;
@@ -800,7 +804,6 @@ public:
 		hisName.getline(him, 999, '\n');
 		stringstream cmd;
 		cmd << "mv .frozen98432 " << him;
-		cout << "cmd: " << cmd.str() << endl;
 		system(cmd.str().c_str());
 		system("rm -f .frozen98432");
 		system("rm -f .coolName943759843");
@@ -808,14 +811,8 @@ public:
 
 	// makes the next best step for p and returns its score
 	Move make_best_move(Player const & p, Player const & o) {
-		cout << "<make_best_move> ENTRY" << endl;
-		//    if(depth_ >= max_depth || stone_count_[p.index()] == 0){
-		//      // we reached the max depth or we have no stones of type p at all
-		//      return make_pair(evaluate_board(p, o), Move(0, 0, 0, 0));
-		//    }
 
 		if (!alreadyDead()) {
-			cout << "not dead yet, killing.." << endl;
 			killIt();
 		}
 		return attack(p, o);
@@ -896,46 +893,27 @@ public:
 	friend ostream & operator <<(ostream & o, Slinga const & b);
 
 	Move defense(Player const & p, Player const & o) {
-		cout << "defense ENTRY" << endl;
 		Attack attack = find_attacks(p, o);
-		cout << "defense after find_attacks" << endl;
 		if (attack.attacker.first >= 0) { //an attack is possible - do it.
-			cout << "<defense> inside attacker loop" << endl;
 			return attack.move;
 		}
 		// if no attack is possible:
-		cout << 799.0 << endl;
 		Point stone;
 		Move move;
-		cout << 799 << endl;
-		cout << "opponent_stones:" << endl;
-		for (size_t debug = 0; debug < stone_count_[o.index()]; debug++) {
-			cout << opponent_stones[debug] << endl;
-		}
-		cout << "opponent_stones:" << endl;
 		threat_map.reset(); //TODO: remove for efficiency
 		shoot_threat_map.reset();
-		cout << 802 << endl;
 		map_threats(p, o, threat_map); // map all the threats
-		cout << 804 << endl;
-		cout << "threat_map:" << endl << threat_map << endl;
 		for (size_t i = 0; i < stone_count_[p.index()]; i++) {
 			stone = player_stones[i];
-			cout << "adding sling/step stones to must_move: " << i << endl;
 			if (threat_map[BOARD_SIZE * stone.second + stone.first]) { // this stone is threatened
-				cout << "ADDED sling/step stones to must_move, STONE: " << stone << endl;
 				must_move.push_back(stone);
 			}
 		}
-		cout << 811 << endl;
 		threat_map |= shoot_threat_map;
-		cout << 813 << endl;
 		for (list<Point>::const_iterator it = must_move.begin(); it	!= must_move.end(); it++) {
-			cout << 815 << endl;
 			if (can_move_to_safety(*it, move, p)) // small overhead due to (possible) duplication
 				return move;				   // in the list, still faster than unordered_set due
 		}									   // to small number of duplicates - (our formation).
-		cout << 825 << endl;
 
 		// if we're here, it means we should work on our formation
 		// first, find out if we're closer to the red or blue desired formation
@@ -946,19 +924,16 @@ public:
 			reds += formation[RED][xy];
 			blues += formation[BLUE][xy];
 		}
-		cout << 836 << endl;
 		COLOR color = (blues >= reds) ? BLUE : RED;
 		// now randomly move a stone not on the formation to an empty place
 		// leftmost is prefered.
 		list<Point> free_stones = find_free_stones(p, color);
-		cout << 841 << endl;
 		if (free_stones.size() > 0) { // we have stones to move
 			//list<Point> empties;
 			Point leftmost;
 			bool leftmost_found = false;
 			Point stone_to_move;
 			Point empty;
-			cout << 848 << endl;
 			for (int i = BOARD_SIZE * color; i < BOARD_SIZE * color + BOARD_SIZE; i++) {
 				empty = places[i];
 
@@ -968,32 +943,25 @@ public:
 				if (!leftmost_found) {
 					leftmost = empty;
 					leftmost_found = true;
-					cout << "leftomost found: " << leftmost << endl;
 				}
 
 				if (check_adjacent(empty, free_stones, stone_to_move, p, color)) {
-					cout << "stone_to_move: " << stone_to_move <<"\n empty: " << empty.first << ", "
-							<< empty.second	<< endl;
 					move = make_move(empty, stone_to_move, o);
 					return move;
 				}
 			}
-			cout << 866 << endl;
 			// no adjacent free stones, choose the one closest to the leftmost empty square and
 			// move it (might be eaten)
 			return make_move(leftmost, find_closest_point(empty, free_stones), o);
 		} else { //move a random stone to a safe place (if possible), or move the leftmost one
-			cout << 871 << endl;
 			for (size_t i = 0; i < stone_count_[p.index()]; i++) {
 				if (can_move_to_safety(player_stones[i], move, p)) {
-					cout << 874 << endl;
 					return move;
 				}
 //			return Move(0,0,0,1,Move::STEP); //for the sake of the compiler FIXME
 			}
 			for (size_t i = 0; i < stone_count_[p.index()]; i++) {
 				if (can_move(player_stones[i], move))
-					cout << 879 << endl;
 					return move;
 			}
 
@@ -1002,9 +970,6 @@ public:
 	}
 
 	Move make_move (Point const & dest, Point const origin, Player const & o) {
-		cout << "<make_move> ENTRY" << endl;
-		cout << "dest: " << dest.first << ", " << dest.second << endl;
-		cout << " origin: " << origin.first << ", " << origin.second << endl << " o: " << o << endl;
 		int tx = dest.first, ty = dest.second, ox = origin.first, oy = origin.second;
 		int dx,dy;
 		if (tx < ox) dx = -1;
@@ -1015,10 +980,8 @@ public:
 		else if (ty > oy) dy = 1;
 		else dy = 0;
 
-		cout << "<make_move> dx, dy: " << dx << ", " << dy << endl;
 		Square const & c = board_[ox+dx][oy+dy];
 		if (c == o || c.is_empty()) {
-			cout << "<make_move> dx, dy: " << dx << ", " << dy << endl;
 			return Move(ox, oy, dx, dy/*, Move::STEP*/);
 		} else {
 			Square const & c = board_[ox][oy+dy];
@@ -1108,7 +1071,6 @@ public:
 	}
 
 	list<Point> find_free_stones(Player const & p, COLOR color) {
-		cout << "<find_free_stones> ENTRY" << endl;
 		Point stone;
 		list<Point> ret;
 		for (size_t i = 0; i < stone_count_[p.index()]; i++) {
@@ -1139,9 +1101,6 @@ public:
 
 	bool can_move_to_safety(Point stone, Move & move, Player const & p) {
 		int x = stone.first, y = stone.second;
-		cout << "<can_move_to_safety> stone: " << stone << endl;
-//		move = Move(0,0,0,1,Move::STEP);
-//		return true;
 		for (int i = -1, xx = x + i; i < 2; i++, xx = x + i) {
 			if (xx >= BOARD_SIZE || xx < 0)
 				continue;
@@ -1149,39 +1108,30 @@ public:
 					j++, yy	= y + j) {
 				if (!threat_map[BOARD_SIZE * yy + xx] && board_[xx][yy] != p) {
 					move = Move(x, y, i, j, Move::STEP);
-					cout << "<can_move_to_safety> return: true" << endl;
 					return true;
 				}
 			}
 		}
-		cout << "<can_move_to_safety> return: false" << endl;
 		return false;
 	}
 
 	void map_threats(Player const & p, Player const & o, bitset<BOARD_SIZE
 			* BOARD_SIZE> & threat_map) {
-		cout << "<map_threats> ENTRY" << endl;
-		cout << "threat map BEFORE:" << endl << threat_map << endl;
 		Point stone;
 		size_t bad_rocks = stone_count_[o.index()];
 
 //#pragma omp parallel for num_threads(4)
 //		{
 			for (size_t i = 0; i < bad_rocks; i++) {
-				cout << "mapping threats -- inside loop" << endl;
 				stone = opponent_stones[i];
 				set_surround(stone, threat_map);
 				set_slings_shoots(stone, threat_map, p, o);
-				cout << "Threats: stone=" << stone << "map:" << endl;
-				cout << threat_map << endl;
 			}
-			cout << "<map_threats> EXIT" << endl;
 	}
 //	}
 
 	void set_slings_shoots(Point stone, bit_board & map, Player const & p,
 			Player const & o) {
-		cout << "<set_slings_shoots> ENTRY" << endl;
 		int x = stone.first, y = stone.second;
 		for (int i = -1; i < 2; i++) {
 			int xx = x + i;
@@ -1193,7 +1143,6 @@ public:
 						< BOARD_SIZE && yy >= 0 && board_[xx][yy] == o ) {
 					int sety = y - j - j, setx = x - i - i;
 					if (sety >= 0 && sety < BOARD_SIZE && setx >= 0 && setx < BOARD_SIZE) {
-						cout << "<set_slings_shoots> setting (sling): " << setx << ", " << sety << endl;
 						map.set(sety * BOARD_SIZE + setx); // sling target set
 					}
 					int xxx = xx + i, yyy = yy + j;
@@ -1213,9 +1162,7 @@ public:
 									first_under_threat = Point(tx, ty);
 								}
 							}
-							cout << "<set_slings_shoots> setting (shoot): " << tx << ", " << ty << endl;
 							shoot_threat_map.set(BOARD_SIZE * ty + tx);
-//							map.set(BOARD_SIZE * ty + tx);
 							tx -= i;
 							ty -= j;
 						}
@@ -1226,11 +1173,9 @@ public:
 				}
 			}
 		}
-		cout << "<set_slings_shoots> EXIT" << endl;
 	}
 
 	void set_surround(Point stone, bit_board & map) {
-		cout << "<set_surround> ENTRY" << endl;
 		int x = stone.first;
 		int y = stone.second;
 		for (int i = -1; i < 2; i++) {
@@ -1239,7 +1184,6 @@ public:
 			for (int j = -1; j < 2; j++) {
 				int xx = x + j;
 				if (xx < 0 || xx >= BOARD_SIZE || (i == 0 && j == 0)) continue;
-				cout << "<set_surround> SET:" << (yy+xx) << endl;
 				map.set(yy + xx);
 			}
 		}
@@ -1249,8 +1193,7 @@ public:
 };
 
 int main(int argc, char * argv[]) {
-//	srand(time(NULL)); // set the seed based on time
-	cout << "I'm alive!" << endl;
+	srand(time(NULL)); // set the seed based on time
 
 	ifstream infile(argv[1]);
 	if (!infile) {
@@ -1276,16 +1219,8 @@ int main(int argc, char * argv[]) {
 	Player const pp('P'); // me, the player
 	Player const oo('O'); // opponent
 
-	// if I have all 10 stones, do a depth 2 exploration, otherwise do depth 4
-	//int depth = slinga.get_stone_count(pp) == 10 ? 2 : 4;
-
-	cout << "FILE READ" << endl;
-
 	Move move = slinga.make_best_move(/*depth, */pp, oo); // this is where the action takes place
 
-
-	/*smp.second*/
-	move.print_move_taken(cout);
 	move.print_move_taken(outfile); // writing the file with the move taken
 	outfile.close();
 
