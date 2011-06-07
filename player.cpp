@@ -693,17 +693,33 @@ public:
 		return attack;
 	}
 
-	/*Move attack(Player const & p, Player const & o) {
-
-	 array<pair<int, 10> opponent_stones_cluster;
-	 int current_cluster = 0;
-	 int current_point = 0;
-	 int checked_points = 0;
-
-	 while (checked_points < 9) {
-
-	 }
-	 }*/
+	Move attack(Player const & p, Player const & o) {
+		Point ourStone,hisStone;
+		Point ourClosestStone,hisClosestStone;
+		int tempdist,smallestDist = 99;
+		for (size_t i = 0; i < stone_count_[p.index()]; i++) {
+				ourStone = player_stones[i];
+				for (size_t j = 0; j < stone_count_[o.index()]; j++) {
+					hisStone = opponent_stones[j];
+					tempdist = max(abs(ourStone.first - hisStone.first),
+							abs(ourStone.second - hisStone.second));
+					if (tempdist < smallestDist) {
+						ourClosestStone = ourStone;
+						hisClosestStone = hisStone;
+						smallestDist = tempdist;
+					}
+				}
+		}
+		if ((stone_count_[o.index()] == 1) && (max(abs(ourClosestStone.first - hisClosestStone.first)
+				,abs(ourClosestStone.second - hisClosestStone.second)) == 1)) {
+			reviveIt();
+			cout << "For to win one hundred victories in one hundred battles is not the acme of skill." << endl
+					<< "To subdue the enemy without fighting is the acme of skill. " << endl;
+		}
+//		sleep(3);
+		return make_move(hisClosestStone,ourClosestStone,o);
+		
+	}
 
 	bool alreadyDead() {
 		ifstream inp;
@@ -798,8 +814,8 @@ public:
 		//      return make_pair(evaluate_board(p, o), Move(0, 0, 0, 0));
 		//    }
 
-		double his_time = remaining_time_[o.index()];
 		if (!alreadyDead()) {
+			cout << "not dead yet, killing.." << endl;
 			killIt();
 		}
 		return attack(p, o);
@@ -1229,11 +1245,6 @@ public:
 		}
 	}
 
-	Move attack(Player const & p, Player const & o) {
-		cout << "attack ENTRY" << endl;
-		Move fixme = Move();
-		return fixme;
-	}
 
 };
 
@@ -1270,14 +1281,6 @@ int main(int argc, char * argv[]) {
 
 	cout << "FILE READ" << endl;
 
-	cout << "him: " << slinga.get_his_name() << endl;
-	slinga.killIt();
-	cout << "he should be dead." << endl;
-	sleep(2);
-	slinga.reviveIt();
-	cout << "he should be back." << endl;
-	sleep(60);
-	return 0;
 	Move move = slinga.make_best_move(/*depth, */pp, oo); // this is where the action takes place
 
 
