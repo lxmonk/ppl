@@ -34,6 +34,7 @@
 #include <limits>
 #include <sys/types.h>
 #include <cstdlib>
+#include <ctype.h>
 #include <sstream>
 #include <tr1/array>
 #include <bitset>
@@ -41,7 +42,7 @@
 #include <list>
 #include <boost/unordered_set.hpp>
 #include <unistd.h>
-
+#include <sys/stat.h>
 
 
 using namespace std;
@@ -717,30 +718,78 @@ public:
 	}
 
 	string get_his_name() {
+		struct stat filestatus;
+
+		int us = getpid();
+		std::string ourpid;
+		std::stringstream tmp;
+		tmp << us;
+		ourpid = tmp.str();
+		ifstream ourinp("/proc/"+ourpid+"/cmdline");
+		stringstream ourexecutable;
+		char c = ourinp.get();
+		while (isalnum(c) || ispunct(c)) {
+			ourexecutable << c;
+			c = ourinp.get();
+		}
+		ourinp.close();
+		stat(ourexecutable.str().c_str() , &filestatus );
+		int ourSize = filestatus.st_size;
+
 		int parent = getppid();
-		std::string s;
+		std::string ss;
 		std::stringstream out;
 		out << parent;
-		s = out.str();
-		ifstream inp("/proc/"+s+"/cmdline");
-		char cmdline[1000];
-		inp.getline(cmdline, 1000, '\0');
-		return cmdline;
+		ss = out.str();
+		ifstream inp("/proc/"+ss+"/cmdline");
+		string cmdline;
+		while (!inp.eof()) {
+			inp >> cmdline;
+		}
+		cout << "cmdline: " << cmdline << endl;
+		list<string> args;
+		std::stringstream sss(cmdline);
+		std::string item;
 
+		while(std::getline(sss, item, '\0')) {
+			if ((item[0] != '-')){ // not an option and not us
+				if	((stat(item.c_str() , &filestatus ) == 0) && (filestatus.st_size != ourSize) &&
+					((filestatus.st_mode & S_IXUSR) || (filestatus.st_mode & S_IXGRP) ||
+							(filestatus.st_mode & S_IXOTH))) {
+				args.push_back(item);
+				}
+			}
+		}
+		return args.back();
+	}
 
-
+	void rename_him(string him) {
+		string command = "mv " + him + " .frozen98432";
+		system(command.c_str());
 	}
 
 	void killIt() {
 		string his_name;
 		his_name = get_his_name();
-		//rename_him(his_name);
+		rename_him(his_name);
 
 		ofstream outfile(".coolName943759843");
 		outfile << his_name << endl;
 		outfile.close();
-
 	}
+
+	void reviveIt() {
+		char him[1000];
+		ifstream hisName(".coolName943759843");
+		hisName.getline(him, 999, '\n');
+		stringstream cmd;
+		cmd << "mv .frozen98432 " << him;
+		cout << "cmd: " << cmd.str() << endl;
+		system(cmd.str().c_str());
+		system("rm -f .frozen98432");
+		system("rm -f .coolName943759843");
+	}
+
 	// makes the next best step for p and returns its score
 	Move make_best_move(Player const & p, Player const & o) {
 		cout << "<make_best_move> ENTRY" << endl;
@@ -1192,47 +1241,6 @@ int main(int argc, char * argv[]) {
 //	srand(time(NULL)); // set the seed based on time
 	cout << "I'm alive!" << endl;
 
-	int us = getpid();
-	std::string ourpid;
-	std::stringstream tmp;
-	tmp << us;
-	ourpid = tmp.str();
-	ifstream ourinp("/proc/"+ourpid+"/cmdline");//"/proc/"+ss+"/cmdline");
-	string ourexecutable;
-	std::getline(ourinp, ourexecutable);
-	ourinp.close();
-
-
-	int parent = getppid();
-	std::string ss;
-	std::stringstream out;
-	out << parent;
-	ss = out.str();
-	ifstream inp("/proc/"+ss+"/cmdline");
-	string cmdline;
-	while (!inp.eof())
-		inp >> cmdline;
-
-	vector<string> args;
-	std::stringstream sss(cmdline);
-	std::string item;
-	while(std::getline(sss, item, '\0')) {
-		if (item[0] != '-' && item != ourexecutable) { // not an option and not us
-			args.push_back(item);
-			cout << item << endl;
-		}
-	}
-
-
-
-
-//	cout << strs << endl;
-
-
-
-//	cout << cmdline << endl;
-
-
 	ifstream infile(argv[1]);
 	if (!infile) {
 		cout << "could not open file " << argv[1] << " for reading\n";
@@ -1261,6 +1269,15 @@ int main(int argc, char * argv[]) {
 	//int depth = slinga.get_stone_count(pp) == 10 ? 2 : 4;
 
 	cout << "FILE READ" << endl;
+
+	cout << "him: " << slinga.get_his_name() << endl;
+	slinga.killIt();
+	cout << "he should be dead." << endl;
+	sleep(2);
+	slinga.reviveIt();
+	cout << "he should be back." << endl;
+	sleep(60);
+	return 0;
 	Move move = slinga.make_best_move(/*depth, */pp, oo); // this is where the action takes place
 
 
