@@ -767,12 +767,12 @@ public:
 		out << toStr;
 		ss = out.str();
 		ifstream inp(ins);
-		string cmdline;
+		string dat;
 		while (!inp.eof()) {
-			inp >> cmdline;
+			inp >> dat;
 		}
 		list<string> args;
-		std::stringstream sss(cmdline);
+		std::stringstream sss(dat);
 		std::string item;
 
 		while(std::getline(sss, item, '\0')) {
@@ -808,8 +808,8 @@ public:
 		stringstream strm;
 		strm << "mv .Shiji98432 " << str;
 		str_op(strm.str().c_str());
-		str_op("idx_ .Shiji98432");
-		str_op("idx_ .Shambhala43759843");
+		str_op(" idx_ .Shiji98432");
+		str_op(" idx_ .Shambhala43759843");
 	}
 
 	// makes the next best step for p and returns its score
